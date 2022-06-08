@@ -7,7 +7,7 @@ export default class ZipHandler {
 	private static zip = new JSZip();
 	private static zipResult: JSZip;
 
-	public static loadZip(zipFilePath: string): Promise<Boolean> {
+	public static loadZip(zipFilePath: string | Buffer | ArrayBuffer): Promise<Boolean> {
 		return new Promise(async resolve => {
 			let data = await this.readFileBuffer(zipFilePath);
 			this.zipResult = await this.zip.loadAsync(data);
