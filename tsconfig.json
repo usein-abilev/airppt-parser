@@ -1,18 +1,43 @@
 {
 	"compilerOptions": {
-		"outDir": "./js",
-		"allowJs": false,
-		"module": "commonjs",
+		"outDir": "./build",
+		"module": "esnext",
 		"moduleResolution": "node",
+		"lib": [
+			"ES6",
+			"dom",
+			"DOM.Iterable"
+		],
+		"allowJs": true,
+		"noImplicitAny": false,
+		"skipLibCheck": true,
+		"esModuleInterop": true,
+		"declaration": true,
+		"allowSyntheticDefaultImports": true,
+		"strict": false,
+		"forceConsistentCasingInFileNames": true,
+		"resolveJsonModule": true,
+		"isolatedModules": true,
+		"noEmit": true,
 		"target": "es6",
-		"baseUrl": "./ts",
+		"baseUrl": "./src",
+		"jsx": "react",
 		"paths": {
-			"@helpers/*": ["helpers/*"],
-			"@models/*": ["models/*"],
-			"@generators/*": ["generators/*"],
-			"@renderers/*": ["renderers/*"]
-		},
-		"declaration": true
+			"@helpers/*": [
+				"helpers/*"
+			],
+			"@models/*": [
+				"models/*"
+			],
+			"@generators/*": [
+				"generators/*"
+			],
+			"@renderers/*": [
+				"renderers/*"
+			]
+		}
 	},
-	"include": ["./ts/**/*"]
+	"include": [
+		"src/**/*"
+	]
 }

@@ -5,6 +5,7 @@ import ParagraphParser from "./paragraphparser";
 import SlideRelationsParser from "./relparser";
 
 import { PowerpointElement } from "airppt-models/pptelement";
+import convertEmusToPixels from "../helpers/emusToPixels";
 
 /**
  * Entry point for all Parsers
@@ -16,7 +17,7 @@ class PowerpointElementParser {
 		ColorParser.setSlideShowTheme(slideShowTheme);
 	}
 
-	public getProcessedElement(rawElement, slideRelationships): PowerpointElement {
+	public getProcessedElement(rawElement, slideRelationships) {
 		SlideRelationsParser.setSlideRelations(slideRelationships);
 		try {
 			if (!rawElement) {
@@ -49,25 +50,23 @@ class PowerpointElementParser {
 
 			let paragraphInfo = CheckValidObject(this.element, '["p:txBody"][0]["a:p"][0]');
 
-			let pptElement: PowerpointElement = {
+			return {
 				name: elementName,
 				shapeType: ShapeParser.determineShapeType(elementPresetType),
-				specialityType: ShapeParser.determineSpecialityType(this.element),
-				elementPosition: {
-					x: elementPosition.x,
-					y: elementPosition.y
+				specialtyType: ShapeParser.determineSpecialityType(this.element),
+				position: {
+					x: convertEmusToPixels(elementPosition.x),
+					y: convertEmusToPixels(elementPosition.y)
 				},
-				elementOffsetPosition: {
-					cx: elementOffsetPosition.cx,
-					cy: elementOffsetPosition.cy
+				offsetPosition: {
+					x: convertEmusToPixels(elementOffsetPosition.cx),
+					y: convertEmusToPixels(elementOffsetPosition.cy)
 				},
 				paragraph: ParagraphParser.extractParagraphElements(paragraphInfo),
 				shape: ShapeParser.extractShapeElements(this.element),
 				links: SlideRelationsParser.resolveShapeHyperlinks(this.element),
 				raw: rawElement
 			};
-
-			return pptElement;
 		} catch (e) {
 			console.warn("ERR could not parse element:", e);
 			return null; //skip the element

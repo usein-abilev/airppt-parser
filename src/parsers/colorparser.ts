@@ -15,13 +15,13 @@ export default class ColorParser {
 	public static setSlideShowTheme(theme) {
 		this.slideShowTheme = theme;
 	}
-	public static getShapeFill(element): PowerpointElement["shape"]["fill"] {
+	public static getShapeFill(element) {
 		//spPR takes precdence
 		let shapeProperties = element["p:spPr"][0];
 
-		let fillType: PowerpointElement["shape"]["fill"] = {
-			fillType: FillType.Solid,
-			fillColor: "00FFFFF"
+		let fillType = {
+			type: FillType.Solid,
+			color: "00FFFFF"
 		};
 
 		//spPR[NOFILL] return null
@@ -32,8 +32,8 @@ export default class ColorParser {
 		//Shape fill is an image
 		if (shapeProperties["a:blipFill"]) {
 			let relId = shapeProperties["a:blipFill"][0]["a:blip"][0]["$"]["r:embed"];
-			fillType.fillType = FillType.Image;
-			fillType.fillColor = RelationParser.getRelationDetails(relId).Uri || "NONE";
+			fillType.type = FillType.Image;
+			fillType.color = RelationParser.getRelationDetails(relId).url || "NONE";
 			return fillType;
 		}
 
@@ -44,13 +44,13 @@ export default class ColorParser {
 				this.getThemeColor(checkPath(shapeProperties, '["a:solidFill"]["0"]["a:schemeClr"]["0"]["$"]["val"]')) ||
 				"FFFFFF";
 
-			fillType.fillColor = solidColor;
+			fillType.color = solidColor;
 			return fillType;
 		}
 
 		//look at p:style for shape default theme values
 		let shapeStyle = checkPath(element, '["p:style"][0]');
-		fillType.fillColor = this.getThemeColor(checkPath(shapeStyle, '["a:fillRef"]["0"]["a:schemeClr"]["0"]["$"]["val"]')) || "FFFFFF";
+		fillType.color = this.getThemeColor(checkPath(shapeStyle, '["a:fillRef"]["0"]["a:schemeClr"]["0"]["$"]["val"]')) || "FFFFFF";
 		return fillType;
 	}
 
@@ -91,7 +91,6 @@ export default class ColorParser {
 			return null;
 		}
 
-		console.log("looking up theme clr");
 		let colors = this.slideShowTheme["a:theme"]["a:themeElements"][0]["a:clrScheme"][0];
 		let targetTheme = "a:" + themeClr;
 		if (targetTheme in colors) {
@@ -101,5 +100,5 @@ export default class ColorParser {
 		return null;
 	}
 
-	public static determineShapeOpacity(element) {}
+	public static determineShapeOpacity(element) { }
 }

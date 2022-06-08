@@ -2,7 +2,7 @@ import { CheckValidObject as checkPath } from "../helpers/checkobj";
 import ColorParser from "./colorparser";
 import LineParser from "./lineparser";
 
-import { PowerpointElement, ElementType, SpecialityType } from "airppt-models/pptelement";
+import { ElementType, SpecialityType } from "airppt-models/pptelement";
 
 /**
  * Parse the shape types and etc.
@@ -21,9 +21,10 @@ export default class ShapeParser {
 		return SpecialityType.None;
 	}
 
-	public static extractShapeElements(element): PowerpointElement["shape"] {
+	public static extractShapeElements(element) {
+		const fill = ColorParser.getShapeFill(element);
 		return {
-			fill: ColorParser.getShapeFill(element),
+			fill: { type: fill.type, color: fill.color },
 			border: LineParser.extractLineElements(element),
 			opacity: ColorParser.getOpacity(element)
 		};

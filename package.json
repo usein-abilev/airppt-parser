@@ -2,9 +2,10 @@
 	"name": "airppt-parser",
 	"version": "1.0.8",
 	"description": "Parses Powerpoint (PPTX) to Standardized JSON Objects",
-	"main": "js/main.js",
-	"types": "js/main.d.ts",
+	"main": "build/main.js",
+	"types": "build/main.d.ts",
 	"scripts": {
+		"start": "react-app-rewired start",
 		"build": "tsc",
 		"test": "./tests/test.js"
 	},
@@ -27,9 +28,13 @@
 	"dependencies": {
 		"@types/node": "^10.12.9",
 		"airppt-models": "^1.0.8",
-		"jszip": "^3.1.5",
+		"buffer": "^6.0.3",
+		"jszip": "^3.10.0",
 		"module-alias": "^2.1.0",
+		"stream": "0.0.2",
 		"string-template": "^1.0.0",
+		"timers": "^0.1.1",
+		"xml2js": "^0.4.23",
 		"xml2js-es6-promise": "^1.1.1"
 	},
 	"_moduleAliases": {
@@ -39,7 +44,31 @@
 		"@renderers": "./js/renderers/"
 	},
 	"devDependencies": {
+		"@types/react": "^18.0.12",
+		"@types/react-dom": "^18.0.5",
 		"chai": "^4.2.0",
-		"mocha": "^5.2.0"
+		"mocha": "^5.2.0",
+		"react": "^18.1.0",
+		"react-app-rewired": "^2.2.1",
+		"react-dom": "^18.1.0",
+		"react-is": "^18.1.0",
+		"react-scripts": "^5.0.1",
+		"typescript": "^4.7.3"
+	},
+	"peerDependencies": {
+		"react": ">=16.13.1",
+		"react-dom": ">=16.13.1"
+	},
+	"browserslist": {
+		"production": [
+			">0.2%",
+			"not dead",
+			"not op_mini all"
+		],
+		"development": [
+			"last 1 chrome version",
+			"last 1 firefox version",
+			"last 1 safari version"
+		]
 	}
 }

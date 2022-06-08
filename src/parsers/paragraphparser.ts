@@ -7,7 +7,7 @@ import { PowerpointElement, TextAlignment, FontAttributes } from "airppt-models/
  * Parse the paragraph elements
  */
 export default class ParagraphParser {
-	public static extractParagraphElements(textElement): PowerpointElement["paragraph"] {
+	public static extractParagraphElements(textElement) {
 		if (!textElement || !textElement["a:r"]) {
 			return null;
 		}
@@ -21,7 +21,7 @@ export default class ParagraphParser {
 	}
 
 	/**a:rPr */
-	public static determineTextProperties(textProperties): PowerpointElement["paragraph"]["textCharacterProperties"] {
+	public static determineTextProperties(textProperties) {
 		if (!textProperties) {
 			return null;
 		}
@@ -63,7 +63,6 @@ export default class ParagraphParser {
 			}
 		}
 
-		console.log("align", alignment);
 		let paragraphPropertiesElement: PowerpointElement["paragraph"]["paragraphProperties"] = {
 			alignment
 		};

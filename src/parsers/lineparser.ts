@@ -7,13 +7,13 @@ import { PowerpointElement, BorderType } from "airppt-models/pptelement";
  * Parses XML that deals with lines for shapes
  */
 export default class LineParser {
-	public static extractLineElements(element): PowerpointElement["shape"]["border"] {
+	public static extractLineElements(element) {
 		let shapeProperties = element["p:spPr"][0];
 		if (!shapeProperties["a:ln"] || shapeProperties["a:ln"][0]["a:noFill"]) {
 			return null;
 		}
 
-		let lineElement: PowerpointElement["shape"]["border"] = {
+		let lineElement = {
 			color: this.getLineColor(shapeProperties),
 			thickness: this.getLineWeight(shapeProperties),
 			type: this.determineBorderType(shapeProperties)

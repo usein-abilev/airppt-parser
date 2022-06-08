@@ -16,7 +16,7 @@ export default class SlideRelationsParser {
 		this.slideRels = rels;
 	}
 
-	public static resolveShapeHyperlinks(element): PowerpointElement["links"] {
+	public static resolveShapeHyperlinks(element) {
 		let relID = CheckValidObject(element, '["p:nvSpPr"][0]["p:cNvPr"][0]["a:hlinkClick"][0]["$"]["r:id"]');
 		relID = CheckValidObject(element, '["p:blipFill"][0]["a:blip"][0]["$"]["r:embed"]');
 		if (!relID) {
@@ -26,7 +26,7 @@ export default class SlideRelationsParser {
 		return linkDetails;
 	}
 
-	public static getRelationDetails(relID): PowerpointElement["links"] {
+	public static getRelationDetails(relID) {
 		let relations = this.slideRels["Relationships"]["Relationship"];
 		for (var relation of relations) {
 			let relationDetails = relation["$"];
@@ -37,9 +37,9 @@ export default class SlideRelationsParser {
 				} else {
 					linkType = LinkType.Asset;
 				}
-				let relElement: PowerpointElement["links"] = {
-					Type: linkType,
-					Uri: relationDetails["Target"].replace("..", "ppt") //update any relative paths
+				let relElement = {
+					type: linkType,
+					url: relationDetails["Target"].replace("..", "ppt") //update any relative paths
 				};
 
 				return relElement;
