@@ -6,7 +6,7 @@ function App() {
     const [presentation, setPresentation] = React.useState(null);
 
     React.useEffect(() => {
-        const parser = new AirParser("https://test.cabinet24.com.ua/api/file/c29bb85495298111f3e0a8a2e4b37cc4.pptx");
+        const parser = new AirParser("");
         parser.parse().then(result => setPresentation(result));
     }, []);
 
