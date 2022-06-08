@@ -11,7 +11,7 @@
 	},
 	"repository": {
 		"type": "airppt-parser",
-		"url": "https://github.com/airpptx/airppt-parser"
+		"url": "https://github.com/usein-abilev/airppt-parser"
 	},
 	"keywords": [
 		"airppt",
@@ -34,8 +34,7 @@
 		"stream": "0.0.2",
 		"string-template": "^1.0.0",
 		"timers": "^0.1.1",
-		"xml2js": "^0.4.23",
-		"xml2js-es6-promise": "^1.1.1"
+		"xml2js": "^0.4.23"
 	},
 	"_moduleAliases": {
 		"@helpers": "./js/helpers/",
