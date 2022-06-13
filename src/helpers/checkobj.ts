@@ -12,3 +12,11 @@ export function CheckValidObject(obj: any, path: string): any {
 		return undefined;
 	}
 }
+
+export const queryElement = (root, name) => {
+	for (let item in root) {
+		if (item.includes(name)) {
+			return root[item];
+		}
+	}
+}
