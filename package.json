@@ -1,6 +1,6 @@
 {
 	"name": "airppt-parser",
-	"version": "1.0.8",
+	"version": "2.0.0",
 	"description": "Parses Powerpoint (PPTX) to Standardized JSON Objects",
 	"main": "build/main.js",
 	"types": "build/main.d.ts",
