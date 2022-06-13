@@ -229,8 +229,8 @@ export const parseShapeFill = (shape, props): { type: FillType; value?: any; opa
             type: FillType.GRADIENT,
             value: {
                 points: gradFill["a:gsLst"][0]["a:gs"].map((g: any) => ({
-                    position: Number(g["$"]["pos"]),
-                    color: g["a:srgbClr"][0]["$"]["val"],
+                    position: Number(g["$"]["pos"]) / 100000,
+                    color: `#${g["a:srgbClr"][0]["$"]["val"]}`,
                     opacity: g["a:srgbClr"][0]["a:alpha"] ? Number(g["a:srgbClr"][0]["a:alpha"][0]["$"]["val"]) / 90196 : 1,
                 })),
             },
@@ -238,7 +238,7 @@ export const parseShapeFill = (shape, props): { type: FillType; value?: any; opa
         };
 
         if (type === "GradientLinear") {
-            data.value.angle = gradFill["a:lin"][0]["$"]["ang"];
+            data.value.angle = gradFill["a:lin"][0]["$"]["ang"] / 60000;
         }
 
         if (type === "GradientPath") {
@@ -253,7 +253,6 @@ export const parseShapeFill = (shape, props): { type: FillType; value?: any; opa
 
     if (shape["a:grpFill"]) {
         const grpFill = shape["a:grpFill"][0];
-        console.log("Gradient!!!!:", grpFill);
         return { type: FillType.GROUP, opacity: 1, };
     }
 

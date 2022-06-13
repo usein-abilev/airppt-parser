@@ -30,16 +30,37 @@ export const parseSlide = async (slideId) => {
         parseSlideBackground(slideDocument["p:sld"]["p:cSld"][0], props, slideRelations),
     ]);
 
+    const layers = await Promise.all([
+        resolveRelations(parseSlideShapes(slideMaster.content["p:sldMaster"]["p:cSld"][0]["p:spTree"][0], props), slideMaster.relations),
+        resolveRelations(parseSlideShapes(slideDocument["p:sld"]["p:cSld"][0]["p:spTree"][0], props), slideRelations),
+    ]);
+
     return {
         backgrounds: slideBackgrounds.filter(a => a),
-        layers: [
-            parseSlideShapes(slideMaster.content["p:sldMaster"]["p:cSld"][0]["p:spTree"][0], props),
-            parseSlideShapes(slideDocument["p:sld"]["p:cSld"][0]["p:spTree"][0], props),
-        ],
+        layers,
         theme: slideThemeStyles,
     }
 }
 
+
+const resolveRelations = (shapes, relations) => {
+    return Promise.all(
+        shapes.map(async shape => {
+            if (shape.needPreload) {
+                if (shape.style.fill.type === FillType.BLIP) {
+                    const blipRelation = relations.find(relation => relation.id === shape.style.fill.value.id);
+                    if (blipRelation) {
+                        shape.style.fill.value.binary = await ZipHandler.getFileInZip(blipRelation.url, "arraybuffer");
+                    }
+                }
+            }
+
+            Reflect.deleteProperty(shape, "needPreload");
+
+            return shape;
+        })
+    );
+}
 
 const parseSlideBackground = async (slideCommonData, props, relations) => {
     const background = slideCommonData?.["p:bg"]?.[0];

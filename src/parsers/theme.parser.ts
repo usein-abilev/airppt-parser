@@ -1,12 +1,11 @@
 import { ColorType } from "../types";
 
 export const getThemeColor = (theme, color) => {
-    if (!color) {
-        return null;
-    }
+    if (!color) return null;
 
     let colors = theme["a:theme"]["a:themeElements"][0]["a:clrScheme"][0];
     let targetTheme = "a:" + color;
+
     if (targetTheme in colors) {
         return colors[targetTheme][0]["a:srgbClr"][0]["$"]["val"];
     }
