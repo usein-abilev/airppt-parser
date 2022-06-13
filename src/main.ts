@@ -1,9 +1,5 @@
-//require("module-alias/register");
 import zipHandler from "./helpers/ziphandler";
 
-import * as format from "string-template";
-import { Buffer } from "buffer";
-import { SpecialityType } from "airppt-models/pptelement";
 import { emusToPoints } from "./helpers/ooxmlConverter";
 import { parseSlideShapes } from "./parsers/shape.parser";
 import { parseSlide } from "./parsers/slide.parser";
@@ -30,43 +26,6 @@ export class AirParser {
 		for (let slideIndex = 0; slideIndex < presentationSlidesCount; slideIndex++) {
 			const slide = await parseSlide(slideIndex + 1);
 			presentationSlides.push(slide);
-			// const slideAttributes = await zipHandler.parseSlideAttributes(format("ppt/slides/slide{0}.xml", slideIndex + 1));
-			// const slideRelations = await zipHandler.parseSlideAttributes(format("ppt/slides/_rels/slide{0}.xml.rels", slideIndex + 1));
-			// const slideTheme = await zipHandler.parseSlideAttributes(format("ppt/theme/theme{0}.xml", slideIndex + 1));
-
-			// const slideShapes = slideAttributes["p:sld"]["p:cSld"][0]["p:spTree"][0]["p:sp"] || [];
-			// const slideImages = slideAttributes["p:sld"]["p:cSld"][0]["p:spTree"][0]["p:pic"] || [];
-			// const allSlideElements = slideShapes.concat(slideImages);
-			// const slideElements = [];
-
-			// const elementParser = new PowerpointElementParser(presentationFileContent, slideTheme);
-
-			// // Initialize relation parser
-			// SlideRelationsParser.setSlideRelations(slideRelations);
-			// const relations = SlideRelationsParser.getRelations();
-			// const { content: slideMaster, relations: slideMasterRelations } = await parseSlideMaster(relations);
-
-			// for (let slideElement of allSlideElements) {
-			// 	const pptElement: any = elementParser.getProcessedElement(slideElement);
-
-			// 	if (pptElement) {
-			// 		if (pptElement.specialtyType === SpecialityType.Image && pptElement.links.type === "Asset") {
-			// 			const binary = await zipHandler.getFileInZip(pptElement.links.url, "arraybuffer");
-			// 			pptElement.imageBuffer = Buffer.from(binary);
-			// 		}
-
-			// 		slideElements.push(pptElement);
-			// 	}
-			// }
-
-			// presentationSlides.push({
-			// 	size: presentationDimension,
-			// 	elements: slideElements,
-			// 	relations: SlideRelationsParser.getRelations(),
-			// 	master: slideMaster,
-			// 	shapes: parseSlideShapes(slideMaster),
-			// 	style: await parseSlideStyle(slideMaster, slideMasterRelations)
-			// });
 		}
 
 		return {
