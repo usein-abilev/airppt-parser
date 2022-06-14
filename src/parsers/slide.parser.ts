@@ -12,33 +12,44 @@ export const parseSlide = async (slideId) => {
 
     // Parse master slide and relations
     const slideRelations = await parseRelations(slideRelationsDocument);
-    const slideMaster = await parseSlideMaster(slideRelations);
-
+    const slideMaster = await parseSlideMaster(slideId);
     // Parse slide theme styles
-    const slideThemePath = slideMaster.relations.find(relation => relation.type.includes("relationships/theme"));
-    const slideTheme = await ZipHandler.parseSlideAttributes(slideThemePath.url);
-    const slideThemeStyles = await parseThemeStyles(slideTheme);
-
-    const props = {
-        theme: slideThemeStyles,
+    const props: any = {
         slideRelations: slideRelations,
-        slideMasterRelations: slideMaster.relations,
+    };
+
+    const backgroundToParse = [];
+    const layersToParse = [];
+
+    if (slideMaster) {
+        const slideThemePath = slideMaster.relations.find(relation => relation.type.includes("relationships/theme"));
+        const slideTheme = await ZipHandler.parseSlideAttributes(slideThemePath.url);
+        const slideThemeStyles = await parseThemeStyles(slideTheme);
+
+        props.slideThemeStyles = slideThemeStyles;
+        props.slideMaster = slideMaster;
+        backgroundToParse.push(parseSlideBackground(slideMaster.content["p:sldMaster"]["p:cSld"][0], props, slideMaster.relations));
+        layersToParse.push(
+            resolveRelations(
+                parseSlideShapes(
+                    slideMaster.content["p:sldMaster"]["p:cSld"][0]["p:spTree"][0],
+                    { ...props, disableText: true }
+                ),
+                slideMaster.relations
+            )
+        );
     }
 
-    const slideBackgrounds = await Promise.all([
-        parseSlideBackground(slideMaster.content["p:sldMaster"]["p:cSld"][0], props, slideMaster.relations),
-        parseSlideBackground(slideDocument["p:sld"]["p:cSld"][0], props, slideRelations),
-    ]);
+    backgroundToParse.push(parseSlideBackground(slideDocument["p:sld"]["p:cSld"][0], props, slideRelations));
+    layersToParse.push(resolveRelations(parseSlideShapes(slideDocument["p:sld"]["p:cSld"][0]["p:spTree"][0], props), slideRelations));
 
-    const layers = await Promise.all([
-        resolveRelations(parseSlideShapes(slideMaster.content["p:sldMaster"]["p:cSld"][0]["p:spTree"][0], props), slideMaster.relations),
-        resolveRelations(parseSlideShapes(slideDocument["p:sld"]["p:cSld"][0]["p:spTree"][0], props), slideRelations),
-    ]);
+    const slideBackgrounds = await Promise.all(backgroundToParse);
+    const layers = await Promise.all(layersToParse);
 
     return {
         backgrounds: slideBackgrounds.filter(a => a),
         layers,
-        theme: slideThemeStyles,
+        theme: props.slideThemeStyles,
     }
 }
 
