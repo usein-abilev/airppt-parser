@@ -21,6 +21,11 @@ export declare enum TextAlignment {
     RIGHT = "RIGHT",
     JUSTIFY = "JUSTIFY"
 }
+export declare enum TextVerticalAlignment {
+    BOTTOM = "BOTTOM",
+    CENTER = "CENTER",
+    TOP = "TOP"
+}
 export declare enum FontStyle {
     BOLD = "BOLD",
     ITALIC = "ITALIC",

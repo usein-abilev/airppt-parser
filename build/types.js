@@ -25,6 +25,12 @@ export var TextAlignment;
     TextAlignment["RIGHT"] = "RIGHT";
     TextAlignment["JUSTIFY"] = "JUSTIFY";
 })(TextAlignment || (TextAlignment = {}));
+export var TextVerticalAlignment;
+(function (TextVerticalAlignment) {
+    TextVerticalAlignment["BOTTOM"] = "BOTTOM";
+    TextVerticalAlignment["CENTER"] = "CENTER";
+    TextVerticalAlignment["TOP"] = "TOP";
+})(TextVerticalAlignment || (TextVerticalAlignment = {}));
 export var FontStyle;
 (function (FontStyle) {
     FontStyle["BOLD"] = "BOLD";

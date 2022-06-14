@@ -9,19 +9,18 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 import ZipHandler from "../helpers/ziphandler";
 import { parseRelations } from "./relation.parser";
-export const parseSlideMaster = (slideRelations) => __awaiter(void 0, void 0, void 0, function* () {
-    const slideLayout = slideRelations.find(relation => relation.type.includes("relationships/slideLayout"));
-    if (!slideLayout)
-        return;
-    const slideLayoutRelationPath = `${slideLayout.url.split("/").slice(0, 2).join("/")}/_rels/${slideLayout.url.split("/").pop()}.rels`;
-    const slideLayoutRelationContent = yield ZipHandler.parseSlideAttributes(slideLayoutRelationPath);
-    const slideLayoutRelations = parseRelations(slideLayoutRelationContent);
-    const slideMasterRelation = slideLayoutRelations.find(relation => relation.type.includes("relationships/slideMaster"));
-    const slideMasterContent = yield ZipHandler.parseSlideAttributes(slideMasterRelation.url);
-    const slideMasterRelationsPath = `${slideMasterRelation.url.split("/").slice(0, 2).join("/")}/_rels/${slideMasterRelation.url.split("/").pop()}.rels`;
-    const slideMasterRelationsContent = yield ZipHandler.parseSlideAttributes(slideMasterRelationsPath);
-    return {
-        content: slideMasterContent,
-        relations: parseRelations(slideMasterRelationsContent),
-    };
+export const parseSlideMaster = (slideId) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const slideMasterPath = `ppt/slideMasters/slideMaster${slideId}.xml`;
+        const slideMasterRelationPath = `ppt/slideMasters/_rels/slideMaster${slideId}.xml.rels`;
+        const slideMasterContent = yield ZipHandler.parseSlideAttributes(slideMasterPath);
+        const slideMasterRelationsContent = yield ZipHandler.parseSlideAttributes(slideMasterRelationPath);
+        return {
+            content: slideMasterContent,
+            relations: parseRelations(slideMasterRelationsContent),
+        };
+    }
+    catch (error) {
+        return null;
+    }
 });

@@ -1,7 +1,16 @@
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { AirParser } from "./main";
-function hexToRgbA(hex) {
+function hexToRgbA(hex, opacity = 1) {
     var c;
     if (/^#([A-Fa-f0-9]{3}){1,2}$/.test(hex)) {
         c = hex.substring(1).split('');
@@ -9,10 +18,66 @@ function hexToRgbA(hex) {
             c = [c[0], c[0], c[1], c[1], c[2], c[2]];
         }
         c = '0x' + c.join('');
-        return [(c >> 16) & 255, (c >> 8) & 255, c & 255];
+        return `rgba(${[(c >> 16) & 255, (c >> 8) & 255, c & 255].join(',')}, ${opacity})`;
     }
-    throw new Error('Bad Hex');
+    return hex;
 }
+const getFillColor = (context, colorLikeObject, shape) => __awaiter(void 0, void 0, void 0, function* () {
+    if (colorLikeObject.type === "SOLID") {
+        return colorLikeObject.value;
+    }
+    if (colorLikeObject.type === "GRADIENT") {
+        console.log("Radial or not gradient", colorLikeObject.value);
+        if (colorLikeObject.value.path === "circle") {
+            return "black";
+        }
+        const radians = ((colorLikeObject.value.angle || 0) * Math.PI) / 180;
+        const gradient = context.createLinearGradient(shape.boundingBox.x, shape.boundingBox.y, Math.cos(radians) + shape.boundingBox.width, Math.sin(radians) + shape.boundingBox.height);
+        colorLikeObject.value.points.forEach((point) => {
+            gradient.addColorStop(point.position, point.color);
+        });
+        return gradient;
+    }
+    if (colorLikeObject.type === "BLIP") {
+        const image = yield loadImage(colorLikeObject.value.binary);
+        context.drawImage(image, shape.boundingBox.x, shape.boundingBox.y, shape.boundingBox.width, shape.boundingBox.height);
+        return "transparent";
+    }
+    if (colorLikeObject.type === "NO_FILL") {
+        return "transparent";
+    }
+    console.log("Unknown shape fill type:", colorLikeObject.type);
+    return "#000";
+    // if (shape.style.fill?.type === "GradientLinear") {
+    //     const angle = (shape.style.fill.angle / 210000) * Math.PI / 180;
+    //     const length = 500;
+    //     const gradient = context.createLinearGradient(0, 0, Math.cos(angle) + length, Math.sin(angle) + length);
+    //     shape.style.fill.points.forEach((point, index) => {
+    //         gradient.addColorStop(point.position / 100000, "#" + point.color);
+    //     });
+    //     return gradient;
+    // } else if (shape.style.fill?.type === "GradientPath") {
+    //     const top = shape.style.fill.fillToRect.t / 100000;
+    //     const bottom = shape.style.fill.fillToRect.b / 100000;
+    //     const left = shape.style.fill.fillToRect.l / 100000;
+    //     const right = shape.style.fill.fillToRect.r / 100000;
+    //     const gradient = context.createRadialGradient(
+    //         shape.box.x + shape.box.width * (left + right) / 2,
+    //         shape.box.y + shape.box.height * (top + bottom) / 2, 0,
+    //         shape.box.x + shape.box.width * (left + right) / 2,
+    //         shape.box.y + shape.box.height * (top + bottom) / 2,
+    //         shape.box.width
+    //     );
+    //     shape.style.fill.points.forEach((point, index) => {
+    //         const rgb = hexToRgbA(`#${point.color}`);
+    //         gradient.addColorStop(point.position / 100000, `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, ${point.opacity})`);
+    //     });
+    //     return gradient;
+    // } else {
+    //     return shape.style.fill ? "#" + shape.style.fill.color : "transparent";
+    // }
+    return "red";
+});
 const loadImage = (binary) => {
     return new Promise(resolve => {
         const blob = new Blob([binary], { type: "image/png" });
@@ -23,6 +88,80 @@ const loadImage = (binary) => {
         };
     });
 };
+const renderBackgrounds = (context, backgrounds) => __awaiter(void 0, void 0, void 0, function* () {
+    return Promise.all(backgrounds.map((background) => __awaiter(void 0, void 0, void 0, function* () {
+        if (background.type === "SOLID") {
+            context.fillStyle = `#${background.color}`;
+            context.fillRect(0, 0, context.canvas.width, context.canvas.height);
+        }
+        else if (background.type === "GRADIENT") {
+            const radians = (background.value.angle * Math.PI) / 180;
+            const gradient = context.createLinearGradient(0, 0, Math.cos(radians) * context.canvas.width, Math.sin(radians) * context.canvas.height);
+            background.value.points.forEach((point) => {
+                gradient.addColorStop(point.position, point.color);
+            });
+            context.fillStyle = gradient;
+            context.fillRect(0, 0, context.canvas.width, context.canvas.height);
+        }
+        else if (background.type === "BLIP") {
+            const image = yield loadImage(background.value.binary);
+            context.drawImage(image, 0, 0, context.canvas.width, context.canvas.height);
+        }
+        else {
+            console.log("Unrecognized background:", background);
+        }
+    })));
+});
+const renderShape = (context, layer) => __awaiter(void 0, void 0, void 0, function* () {
+    return Promise.all(layer.map((shape) => __awaiter(void 0, void 0, void 0, function* () {
+        context.save();
+        const fillColor = yield getFillColor(context, shape.style.fill, shape);
+        if (shape.geometry.type === "custom") {
+            context.beginPath();
+            context.fillStyle = fillColor;
+            context.lineWidth = shape.style.border
+                ? shape.style.border.thickness
+                : 0;
+            context.strokeStyle = shape.style.border
+                ? shape.style.border.fill.value
+                : "transparent";
+            context.moveTo(shape.boundingBox.x + shape.geometry.path.moveTo.x / 2, shape.boundingBox.y + shape.geometry.path.moveTo.y / 2);
+            shape.geometry.path.points.forEach((point) => {
+                context.lineTo(shape.boundingBox.x + point.x / 2, shape.boundingBox.y + point.y / 2);
+            });
+            context.fill();
+            context.stroke();
+            context.closePath();
+        }
+        else if (shape.geometry.type === "rect") {
+            context.beginPath();
+            context.globalAlpha = shape.style.opacity;
+            context.fillStyle = fillColor;
+            context.rect(shape.boundingBox.x, shape.boundingBox.y, shape.boundingBox.width, shape.boundingBox.height);
+            context.fill();
+            context.closePath();
+            context.globalAlpha = 1;
+        }
+        else {
+            console.log("Unknown shape geometry type:", shape.geometry.type);
+        }
+        if (shape.text) {
+            console.log(shape.text);
+            context.fillStyle = "red";
+            context.fillRect(shape.boundingBox.x, shape.boundingBox.y, shape.boundingBox.width, shape.boundingBox.height);
+            shape.text.paragraphs.forEach((paragraph, i) => {
+                context.globalAlpha = paragraph.style.opacity;
+                context.font = `${paragraph.style.fontSize}px ${paragraph.style.fontFamily}`;
+                context.fillStyle = paragraph.style.color;
+                context.textAlign = paragraph.style.alignment;
+                context.fillText(paragraph.text, shape.boundingBox.x, shape.boundingBox.y + paragraph.style.fontSize + (paragraph.style.fontSize + paragraph.style.spaceAfter) * i);
+                context.globalAlpha = 1;
+            });
+        }
+        context.restore();
+        // await this.drawTextElement(context, shape);
+    })));
+});
 function printAtWordWrap(context, text, x, y, lineHeight, fitWidth) {
     fitWidth = fitWidth || 0;
     lineHeight = lineHeight || 20;
@@ -60,47 +199,22 @@ function printAtWordWrap(context, text, x, y, lineHeight, fitWidth) {
 function App() {
     const [presentation, setPresentation] = React.useState(null);
     React.useEffect(() => {
-        const parser = new AirParser("https://test.cabinet24.com.ua/api/file/4f0b51154272e2cd308b255eb60c1e7e/presentation.pptx");
+        const parser = new AirParser("https://test.cabinet24.com.ua/api/file/c29bb85495298111f3e0a8a2e4b37cc4/test.pptx");
         parser.parse().then(result => setPresentation(result));
     }, []);
-    const getFillColor = (context, shape) => {
-        var _a, _b;
-        if (((_a = shape.style.fill) === null || _a === void 0 ? void 0 : _a.type) === "GradientLinear") {
-            const angle = (shape.style.fill.angle / 210000) * Math.PI / 180;
-            const length = 500;
-            const gradient = context.createLinearGradient(0, 0, Math.cos(angle) + length, Math.sin(angle) + length);
-            shape.style.fill.points.forEach((point, index) => {
-                gradient.addColorStop(point.position / 100000, "#" + point.color);
-            });
-            return gradient;
-        }
-        else if (((_b = shape.style.fill) === null || _b === void 0 ? void 0 : _b.type) === "GradientPath") {
-            const top = shape.style.fill.fillToRect.t / 100000;
-            const bottom = shape.style.fill.fillToRect.b / 100000;
-            const left = shape.style.fill.fillToRect.l / 100000;
-            const right = shape.style.fill.fillToRect.r / 100000;
-            const gradient = context.createRadialGradient(shape.box.x + shape.box.width * (left + right) / 2, shape.box.y + shape.box.height * (top + bottom) / 2, 0, shape.box.x + shape.box.width * (left + right) / 2, shape.box.y + shape.box.height * (top + bottom) / 2, shape.box.width);
-            shape.style.fill.points.forEach((point, index) => {
-                const rgb = hexToRgbA(`#${point.color}`);
-                gradient.addColorStop(point.position / 100000, `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, ${point.opacity})`);
-            });
-            return gradient;
-        }
-        else {
-            return shape.style.fill ? "#" + shape.style.fill.color : "transparent";
-        }
-    };
     React.useEffect(() => {
         if (!presentation)
             return;
         console.log("presentation:", presentation);
+        presentation.slides.forEach((slide, slideIndex) => __awaiter(this, void 0, void 0, function* () {
+            const canvas = document.getElementById(`canvas#${slideIndex + 1}`);
+            const context = canvas.getContext('2d');
+            canvas.width = presentation.size.width;
+            canvas.height = presentation.size.height;
+            yield renderBackgrounds(context, slide.backgrounds);
+            yield Promise.all(slide.layers.map((shape) => __awaiter(this, void 0, void 0, function* () { return renderShape(context, shape); })));
+        }));
         // presentation.slides.forEach(async (slide, slideIndex) => {
-        //     const canvas = document.getElementById(`canvas#${slideIndex + 1}`);
-        //     const context = canvas.getContext('2d');
-        //     if (slide.style.backgroundImage) {
-        //         const image = await loadImage(slide.style.backgroundImage.binary);
-        //         context.drawImage(image, 0, 0, canvas.width, canvas.height);
-        //     }
         //     slide.shapes.forEach(shape => {
         //         context.globalAlpha = shape.style.opacity;
         //         if (shape.type === "ellipse") {
