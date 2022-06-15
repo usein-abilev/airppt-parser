@@ -31,10 +31,18 @@ export default class ZipHandler {
 	}
 
 	public static async readFileBuffer(filePath): Promise<Buffer> {
-		if (typeof filePath === "string" && filePath.startsWith("http")) {
-			const response = await fetch(filePath);
-			const buffer = await response.arrayBuffer();
-			return Buffer.from(buffer);
+		if (typeof filePath === "string") {
+			if (filePath.startsWith("http")) {
+				const response = await fetch(filePath);
+				const buffer = await response.arrayBuffer();
+				return Buffer.from(buffer);
+			}
+
+			if (filePath.startsWith("data:application")) {
+				const base64 = filePath.split(",")[1];
+				const buffer = Buffer.from(base64, "base64");
+				return buffer;
+			}
 		}
 
 		return Buffer.from(filePath);
