@@ -37,10 +37,17 @@ export default class ZipHandler {
     }
     static readFileBuffer(filePath) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (typeof filePath === "string" && filePath.startsWith("http")) {
-                const response = yield fetch(filePath);
-                const buffer = yield response.arrayBuffer();
-                return Buffer.from(buffer);
+            if (typeof filePath === "string") {
+                if (filePath.startsWith("http")) {
+                    const response = yield fetch(filePath);
+                    const buffer = yield response.arrayBuffer();
+                    return Buffer.from(buffer);
+                }
+                if (filePath.startsWith("data:application")) {
+                    const base64 = filePath.split(",")[1];
+                    const buffer = Buffer.from(base64, "base64");
+                    return buffer;
+                }
             }
             return Buffer.from(filePath);
         });
