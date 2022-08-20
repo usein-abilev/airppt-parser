@@ -1,14 +1,7 @@
-import { FillType, TextType } from "../types";
-export declare const parseSlideShapes: (shapeTree: any, props: any) => any[];
-export declare const parseTextBody: (textBody: any, props: any) => {
-    type: TextType;
-    style: any;
-    text?: undefined;
-} | {
-    type: TextType;
-    text: any;
-    style: any;
-};
+import { FillType } from "../types";
+export declare const parseSlideShapes: (shapeTree: any, props?: {}) => any[];
+export declare const parseTextContent: (textContent: any, props: any) => any;
+export declare const parseListStyle: (levelStyle: any) => any;
 export declare const parseBoundingBox: (element: any) => {
     x: number;
     y: number;

@@ -1,4 +1,13 @@
-export declare const getThemeColor: (theme: any, color: any) => any;
+import { FillType } from "../types";
+export declare const getThemeColor: (color: any, theme: any) => {
+    type: FillType;
+    opacity: number;
+    value?: undefined;
+} | {
+    type: FillType;
+    value: any;
+    opacity: any;
+};
 export declare const parseThemeStyles: (theme: any) => {
     colorScheme: {
         name: any;
@@ -19,4 +28,5 @@ export declare const parseThemeStyles: (theme: any) => {
             };
         };
     };
+    colorSchemeMap: any;
 };

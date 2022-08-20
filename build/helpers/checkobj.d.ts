@@ -4,3 +4,4 @@
  */
 export declare function CheckValidObject(obj: any, path: string): any;
 export declare const queryElement: (root: any, name: any) => any;
+export declare const hasChild: (root: any) => any;

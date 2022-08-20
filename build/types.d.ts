@@ -3,6 +3,7 @@ export declare enum ColorType {
     SYSTEM = "SYSTEM"
 }
 export declare enum FillType {
+    VARIABLE = "VARIABLE",
     BLIP = "BLIP",
     GRADIENT = "GRADIENT",
     GROUP = "GROUP",
@@ -23,6 +24,8 @@ export declare enum TextAlignment {
 }
 export declare enum TextVerticalAlignment {
     BOTTOM = "BOTTOM",
+    BASELINE = "BASELINE",
+    AUTO = "AUTO",
     CENTER = "CENTER",
     TOP = "TOP"
 }
@@ -34,5 +37,6 @@ export declare enum FontStyle {
 }
 export declare enum TextType {
     SYSTEM_FIELD = "SYSTEM_FIELD",
-    PARAGRAPH = "PARAGRAPH"
+    PARAGRAPH = "PARAGRAPH",
+    NON_VISUAL = "NON_VISUAL"
 }

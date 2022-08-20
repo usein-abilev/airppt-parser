@@ -5,6 +5,7 @@ export var ColorType;
 })(ColorType || (ColorType = {}));
 export var FillType;
 (function (FillType) {
+    FillType["VARIABLE"] = "VARIABLE";
     FillType["BLIP"] = "BLIP";
     FillType["GRADIENT"] = "GRADIENT";
     FillType["GROUP"] = "GROUP";
@@ -28,6 +29,8 @@ export var TextAlignment;
 export var TextVerticalAlignment;
 (function (TextVerticalAlignment) {
     TextVerticalAlignment["BOTTOM"] = "BOTTOM";
+    TextVerticalAlignment["BASELINE"] = "BASELINE";
+    TextVerticalAlignment["AUTO"] = "AUTO";
     TextVerticalAlignment["CENTER"] = "CENTER";
     TextVerticalAlignment["TOP"] = "TOP";
 })(TextVerticalAlignment || (TextVerticalAlignment = {}));
@@ -42,4 +45,5 @@ export var TextType;
 (function (TextType) {
     TextType["SYSTEM_FIELD"] = "SYSTEM_FIELD";
     TextType["PARAGRAPH"] = "PARAGRAPH";
+    TextType["NON_VISUAL"] = "NON_VISUAL";
 })(TextType || (TextType = {}));
