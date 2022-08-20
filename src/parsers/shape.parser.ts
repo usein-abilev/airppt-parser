@@ -1,171 +1,249 @@
-import { queryElement } from "../helpers/checkobj";
+import { hasChild, queryElement } from "../helpers/checkobj";
 import { emusToPoints } from "../helpers/ooxmlConverter";
 import { BorderType, FillType, FontStyle, TextAlignment, TextType, TextVerticalAlignment } from "../types";
 import { getThemeColor } from "./theme.parser";
 
-export const parseSlideShapes = (shapeTree, props) => {
-    const shapes = shapeTree["p:sp"] || [];
+export const parseSlideShapes = (shapeTree, props = {}) => {
+    const shapes = shapeTree["p:sp"] || shapeTree["xdr:sp"] || [];
     const pictures = shapeTree["p:pic"] || [];
 
     return [...shapes, ...pictures].map((shape) => parseSlideShape(shape, props));
 }
 
 const parseSlideShape = (shape, props) => {
-    const shapeNonVisual = shape["p:nvSpPr"] || shape["xdr:nvSpPr"];
-    const shapeProperties = shape["p:spPr"] || shape["xdr:spPr"];
-    const shapeText = shape["p:txBody"] || shape["xdr:txBody"];
+    try {
+        const shapeNonVisual = shape["p:nvSpPr"] || shape["xdr:nvSpPr"];
+        const shapeProperties = shape["p:spPr"] || shape["xdr:spPr"];
+        const shapeText = shape["p:txBody"] || shape["xdr:txBody"];
 
-    const element: any = {
-        needPreload: Boolean(shape["p:nvPicPr"]),
-        raw: shape,
-        style: {},
-    }
-
-    if (shapeNonVisual) {
-        element.id = shapeNonVisual[0]["p:cNvPr"][0]["$"].id;
-        element.name = shapeNonVisual[0]["p:cNvPr"][0]["$"].name;
-    }
-
-    if (shapeProperties) {
-        element.boundingBox = parseBoundingBox(shapeProperties[0]);
-        const geometry = parseShapeGeometry(shapeProperties[0]);
-        const border = parseShapeStrokeLine(shapeProperties[0], props);
-        const shapeRootFillStyle = parseShapeFill(shape, props);
-        const shapeFillStyle = parseShapeFill(shapeProperties[0], props);
-
-        if (geometry) element.geometry = geometry;
-        if (border) element.style.border = border;
-
-        if (shapeRootFillStyle.type !== FillType.NO_FILL) {
-            element.style.fill = shapeRootFillStyle;
-            element.style.opacity = shapeFillStyle.opacity;
-        } else {
-            element.style.fill = shapeFillStyle;
-            element.style.opacity = shapeFillStyle.opacity;
+        const element: any = {
+            needPreload: Boolean(shape["p:nvPicPr"]),
+            raw: shape,
+            geometry: {},
+            box: null,
+            placeholder: {},
+            containerStyle: {},
         }
-    }
 
-    if (shapeText && !props.disableText) {
-        const bodyProps = shapeText[0]["a:bodyPr"];
-        const paragraphs = shapeText[0]["a:p"].map(paragraph => parseTextBody(paragraph, props));
-        const textBody: any = {
-            paragraphs,
-        };
+        if (shapeNonVisual) {
+            element.id = shapeNonVisual[0]["p:cNvPr"][0]["$"].id;
+            element.name = shapeNonVisual[0]["p:cNvPr"][0]["$"].name;
 
-        if (bodyProps) {
-            const bodyProperties = bodyProps[0]["$"];
-            textBody.style = {
-                marginLeft: bodyProperties.lIns ? (bodyProperties.lIns / 45720) * 72 : 0,
-                marginRight: bodyProperties.rIns ? (bodyProperties.rIns / 45720) * 72 : 0,
-                marginTop: bodyProperties.tIns ? (bodyProperties.tIns / 45720) * 72 : 0,
-                marginBottom: bodyProperties.bIns ? (bodyProperties.bIns / 45720) * 72 : 0,
-                verticalAlign: bodyProperties.anchor ? parseTextVerticalAlignment(bodyProperties.anchor) : TextVerticalAlignment.TOP,
+            const placeholder = shapeNonVisual[0]["p:nvPr"]?.[0]?.["p:ph"]?.[0]?.$;
+
+            if (placeholder) {
+                element.placeholder.type = placeholder.type;
+                element.placeholder.id = placeholder.idx;
             }
         }
 
-        element.text = textBody;
-    }
+        if (shapeProperties) {
+            const validShapeProperties = Array.isArray(shapeProperties) && shapeProperties.every(item => typeof item === "object");
+            if (validShapeProperties) {
+                element.box = parseBoundingBox(shapeProperties[0]);
+                const geometry = parseShapeGeometry(shapeProperties[0]);
+                const border = parseShapeStrokeLine(shapeProperties[0], props);
+                const shapeRootFillStyle = parseShapeFill(shape, props);
+                const shapeFillStyle = parseShapeFill(shapeProperties[0], props);
 
-    return element;
+                if (geometry) element.geometry = geometry;
+                if (border) element.containerStyle.border = border;
+
+                if (shapeRootFillStyle.type !== FillType.NO_FILL) {
+                    element.containerStyle.fill = shapeRootFillStyle;
+                    element.containerStyle.opacity = shapeFillStyle.opacity;
+                } else {
+                    element.containerStyle.fill = shapeFillStyle;
+                    element.containerStyle.opacity = shapeFillStyle.opacity;
+                }
+            }
+        }
+
+        if (shapeText && !props.disableText) {
+            const bodyProperties = shapeText[0]["a:bodyPr"]?.[0]?.$;
+            const levelStyle = shapeText[0]["a:lstStyle"]?.[0];
+            const paragraphs = shapeText[0]["a:p"].map(paragraph => parseTextContent(paragraph, props));
+            const textBody: any = {
+                paragraphs,
+                levelStyle: parseListStyle(levelStyle),
+            };
+
+            if (bodyProperties) {
+                textBody.style = {
+                    marginLeft: bodyProperties.lIns ? (bodyProperties.lIns / 45720) * 72 : 0,
+                    marginRight: bodyProperties.rIns ? (bodyProperties.rIns / 45720) * 72 : 0,
+                    marginTop: bodyProperties.tIns ? (bodyProperties.tIns / 45720) * 72 : 0,
+                    marginBottom: bodyProperties.bIns ? (bodyProperties.bIns / 45720) * 72 : 0,
+                    verticalAlign: bodyProperties.anchor ? parseTextVerticalAlignment(bodyProperties.anchor) : TextVerticalAlignment.TOP,
+                }
+            }
+
+            element.text = textBody;
+        }
+
+        return element;
+    } catch (error) {
+        console.error("Parse slide error:", shape, error);
+    }
 }
 
-export const parseTextBody = (textBody, props) => {
-    const paragraphs = textBody["a:r"] || [];
-    const paragraphProperties = textBody["a:pPr"] || [];
-    const text = paragraphs.reduce((acc, paragraph) => {
-        const text = paragraph["a:t"];
-        const textProperties = paragraph["a:rPr"][0];
-        return { value: [...(acc.value || []), text], properties: { ...textProperties, ...acc.properties } };
-    }, {});
-
-    const style: any = {
-        attributes: [],
-        fontSize: 14,
-        fontFamily: "Arial",
-        color: "black",
-        marginLeft: 0,
-        indent: 0,
-        alignment: TextAlignment.LEFT,
-        spaceBefore: 0,
-        spaceAfter: 0,
-        lineSpacing: 1,
+export const parseTextContent = (textContent, props) => {
+    const resultProperties: any = {
+        properties: {
+            attributes: [],
+        },
     };
 
-    if (paragraphProperties[0]) {
-        const properties = paragraphProperties[0];
-
-        if (properties.$) {
-            const alignment = properties["$"]["algn"];
-
-            style.alignment = alignment ? parseTextAlignment(alignment) : TextAlignment.LEFT;
-
-            if (properties.$.indent) {
-                style.indent = emusToPoints(properties.$.indent);
-            }
-
-            if (properties.$.marL) {
-                style.marginLeft = emusToPoints(properties.$.marL);
-            }
-        }
-
-        if (properties["a:spcBef"]) {
-            const spaceBefore = properties["a:spcBef"][0]["a:spcPts"][0].$.val;
-            style.spaceBefore = spaceBefore / 72;
-        }
-
-        if (properties["a:spcAft"]) {
-            const spaceAfter = properties["a:spcAft"][0]["a:spcPts"][0].$.val;
-            style.spaceAfter = spaceAfter / 72;
-        }
-
-        if (properties["a:lnSpc"]) {
-            const lineSpacing = properties["a:lnSpc"][0]["a:spcPct"][0].$.val;
-            style.lineSpacing = lineSpacing / 100000;
-        }
-
+    if (textContent["a:br"]) {
+        resultProperties.lineBreak = true;
     }
 
-    if (text.properties) {
-        if (text.properties["$"].b) style.attributes.push(FontStyle.BOLD);
-        if (text.properties["$"].i) style.attributes.push(FontStyle.ITALIC);
-        if (text.properties["$"].u) style.attributes.push(FontStyle.UNDERLINE);
-        if (text.properties["$"].strike) style.attributes.push(FontStyle.STRIKE);
-        if (text.properties["$"].sz) style.fontSize = (text.properties["$"].sz || 1200) / 96;
-        if (text.properties["a:latin"][0].$.typeface) style.fontFamily = text.properties["a:latin"][0].$.typeface;
-
-        const color = parseShapeFill(text.properties, props);
-
-        if (color.type !== FillType.NO_FILL) {
-            style.color = color.value;
-            style.opacity = color.opacity;
-        } else {
-            style.color = "#000";
-            style.opacity = 1;
-        }
+    if (textContent["a:endParaRPr"]) {
+        resultProperties.endParagraph = true;
     }
 
-    if (textBody["a:fld"]) {
-        const field = textBody["a:fld"][0];
+    if (textContent["a:pPr"]) {
+        const properties = textContent["a:pPr"][0];
+        resultProperties.properties = {
+            ...resultProperties.properties,
+            ...parseParagraphProperties(properties),
+        };
+    }
+
+    if (textContent["a:r"]) {
+        const paragraphs = textContent["a:r"] || [];
+        const text = paragraphs.reduce((acc: any, paragraph: any) => {
+            const text = paragraph["a:t"];
+            const textProperties = paragraph["a:rPr"]?.[0];
+            return {
+                value: [...(acc.value || []), text],
+                properties: { ...textProperties, ...acc.properties }
+            };
+        }, {});
+
+        if (text.properties) {
+            if (text.properties?.["$"]?.b) resultProperties.properties.attributes.push(FontStyle.BOLD);
+            if (text.properties?.["$"]?.i) resultProperties.properties.attributes.push(FontStyle.ITALIC);
+            if (text.properties?.["$"]?.u) resultProperties.properties.attributes.push(FontStyle.UNDERLINE);
+            if (text.properties?.["$"]?.strike) resultProperties.properties.attributes.push(FontStyle.STRIKE);
+            if (text.properties?.["$"]?.sz) resultProperties.properties.fontSize = (text.properties["$"].sz || 1200) / 96;
+            if (text.properties?.["a:latin"]?.[0]?.$?.typeface) resultProperties.properties.fontFamily = text.properties["a:latin"][0].$.typeface;
+
+            const color = parseShapeFill(text.properties, props);
+
+            resultProperties.properties.fill = color;
+        }
 
         return {
-            type: TextType.SYSTEM_FIELD,
-            style,
-        }
-    } else {
-        return {
+            ...resultProperties,
             type: TextType.PARAGRAPH,
             text: text.value.join(" "),
-            style,
+        };
+    }
+
+    if (textContent["a:fld"]) {
+        const field = textContent["a:fld"][0];
+        const fieldText = field["a:t"] || "";
+
+        return {
+            ...resultProperties,
+            type: TextType.SYSTEM_FIELD,
+            field: {
+                id: field.$.id,
+                type: field.$.type,
+                text: fieldText.join(" "),
+            },
+            text: fieldText.join(" "),
         }
     }
+
+    return {
+        ...resultProperties,
+        type: TextType.NON_VISUAL,
+    };
+}
+
+export const parseListStyle = (levelStyle) => {
+    const result: any = {};
+    if (!levelStyle) return result;
+
+    Object.keys(levelStyle).forEach(key => {
+        if (!result.levels) result.levels = [];
+        result.levels.push(key);
+        const item = levelStyle[key][0];
+        const attributes: any = {};
+        const runElement = item["a:defRPr"]?.[0];
+        if (runElement) {
+            attributes.fontSize = (runElement?.$?.sz || 1400) / 100;
+            attributes.fontFamily = runElement["a:latin"]?.[0]?.$?.typeface;
+            attributes.fill = parseShapeFill(runElement, {});
+        }
+
+        result[key] = {
+            ...parseParagraphProperties(item),
+            ...attributes,
+        };
+    });
+
+    return result;
+}
+
+const parseParagraphProperties = (textPropertiesRoot) => {
+    const properties: any = {};
+
+    if (textPropertiesRoot?.$) {
+        if (textPropertiesRoot.$.lvl) {
+            properties.level = textPropertiesRoot.$.lvl;
+        }
+
+        if (textPropertiesRoot.$.algn) {
+            properties.alignment = parseTextAlignment(textPropertiesRoot.$.algn);
+        }
+
+        if (textPropertiesRoot.$.fontAlgn) {
+        }
+
+        if (textPropertiesRoot.$.indent) {
+            properties.indent = emusToPoints(textPropertiesRoot.$.indent);
+        }
+
+        if (textPropertiesRoot.$.marL) {
+            properties.marginLeft = emusToPoints(textPropertiesRoot.$.marL);
+        }
+
+        if (textPropertiesRoot.$.marR) {
+            properties.marginRight = emusToPoints(textPropertiesRoot.$.marR);
+        }
+    }
+
+    if (textPropertiesRoot["a:spcBef"]?.[0]) {
+        const spaceBeforeElement = textPropertiesRoot["a:spcBef"][0];
+        const spaceBefore = (spaceBeforeElement["a:spcPts"] || spaceBeforeElement["a:spcPct"])?.[0]?.$?.val;
+        properties.spaceBefore = spaceBefore / 72;
+    }
+
+    if (textPropertiesRoot["a:spcAft"]) {
+        const spaceAfterElement = textPropertiesRoot["a:spcAft"][0];
+        const spaceAfter = (spaceAfterElement["a:spcPts"] || spaceAfterElement["a:spcPct"])?.[0]?.$?.val;
+        properties.spaceAfter = spaceAfter / 72;
+    }
+
+    if (textPropertiesRoot["a:lnSpc"]) {
+        const lineSpacing = textPropertiesRoot["a:lnSpc"][0]["a:spcPct"][0].$.val;
+        properties.lineSpacing = lineSpacing / 100000;
+    }
+
+    return properties;
 }
 
 const parseTextVerticalAlignment = (alignment) => {
     switch (alignment) {
-        case "t": return TextVerticalAlignment.TOP;
+        case "base": return TextVerticalAlignment.BASELINE;
+        case "auto": return TextVerticalAlignment.AUTO;
         case "ctr": return TextVerticalAlignment.CENTER;
+        case "t": return TextVerticalAlignment.TOP;
         case "b": return TextVerticalAlignment.BOTTOM;
-        default: return TextVerticalAlignment.TOP;
+        default: return TextVerticalAlignment.BASELINE;
     }
 }
 
@@ -185,7 +263,9 @@ const parseTextAlignment = (alignment) => {
 }
 
 export const parseBoundingBox = (element) => {
-    const elementPosition = element["a:xfrm"][0]["a:off"][0]["$"];
+    const boxElement = element["a:xfrm"];
+    if (!boxElement) return null;
+    const elementPosition = boxElement[0]["a:off"][0]["$"];
     const elementSize = element["a:xfrm"][0]["a:ext"][0]["$"];
 
     return {
@@ -220,17 +300,19 @@ export const parseShapeFill = (shape, props): { type: FillType; value?: any; opa
         const blipFill = queryElement(shape, "blipFill")[0];
         const blip = blipFill["a:blip"][0];
         const stretch = blipFill["a:stretch"][0];
+        const stretchFill = stretch["a:fillRect"] || stretch.$?.["a:fillRect"];
+
         return {
             type: FillType.BLIP,
             value: {
                 id: blip.$["r:embed"],
                 stretch: stretch ? {
-                    type: stretch.$["a:fillRect"] ? "fillRect" : "fill",
-                    fillRect: stretch.$["a:fillRect"] ? {
-                        x: emusToPoints(stretch.$["a:x"]),
-                        y: emusToPoints(stretch.$["a:y"]),
-                        cx: emusToPoints(stretch.$["a:cx"]),
-                        cy: emusToPoints(stretch.$["a:cy"]),
+                    type: stretchFill ? "fillRect" : "fill",
+                    fillRect: stretchFill && !Array.isArray(stretchFill) ? {
+                        x: emusToPoints(stretchFill["a:x"]),
+                        y: emusToPoints(stretchFill["a:y"]),
+                        cx: emusToPoints(stretchFill["a:cx"]),
+                        cy: emusToPoints(stretchFill["a:cy"]),
                     } : null,
                 } : null,
             },
@@ -290,7 +372,8 @@ export const parseShapeFill = (shape, props): { type: FillType; value?: any; opa
 
     if (shape["a:grpFill"]) {
         const grpFill = shape["a:grpFill"][0];
-        return { type: FillType.GROUP, opacity: 1, };
+        console.error("Cannot to parse a group:", grpFill);
+        return { type: FillType.GROUP, opacity: 1 };
     }
 
     if (shape["a:noFill"]) {
@@ -319,12 +402,7 @@ export const parseShapeFill = (shape, props): { type: FillType; value?: any; opa
         }
 
         if (solidFill["a:schemeClr"]) {
-            const themeColor = getThemeColor(props.theme, solidFill["a:schemeClr"][0]["$"].val);
-            return {
-                type: FillType.SOLID,
-                value: themeColor,
-                opacity: 1,
-            };
+            return getThemeColor(solidFill["a:schemeClr"][0]["$"].val, props.theme);
         };
     }
 
@@ -355,7 +433,7 @@ const parsePathPoint = (point) => {
 }
 
 const parseShapeStrokeLine = (shapeProperties, props) => {
-    if (shapeProperties["a:ln"] && !shapeProperties["a:ln"][0]["a:noFill"]) {
+    if (hasChild(shapeProperties["a:ln"]) && !shapeProperties["a:ln"]?.[0]?.["a:noFill"]) {
         const line = shapeProperties["a:ln"][0];
         const lineWidth = line["$"]["w"] || 12500;
         const lineStyle = parseShapeFill(line, props)

@@ -20,3 +20,7 @@ export const queryElement = (root, name) => {
 		}
 	}
 }
+
+export const hasChild = (root) => {
+	return root?.length && root.some(child => typeof child === "object");
+}
