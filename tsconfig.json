@@ -5,6 +5,7 @@
 		"moduleResolution": "node",
 		"lib": [
 			"ES6",
+			"ESNext",
 			"dom",
 			"DOM.Iterable"
 		],
@@ -19,7 +20,7 @@
 		"resolveJsonModule": true,
 		"isolatedModules": true,
 		"noEmit": true,
-		"target": "es6",
+		"target": "ESNext",
 		"baseUrl": "./src",
 		"jsx": "react",
 		"paths": {
