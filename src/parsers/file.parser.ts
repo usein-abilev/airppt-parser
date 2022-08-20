@@ -23,7 +23,7 @@ export const readSlideFile = async (
             relations: parseRelations(slideRelationsContent),
         };
     } catch (error) {
-        console.log("Reading presentation file error:", error)
+        console.error("Reading presentation file error:", error)
         return null;
     }
 }

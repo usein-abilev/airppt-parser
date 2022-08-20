@@ -1,7 +1,7 @@
 import { hasChild, queryElement } from "../helpers/checkobj";
 import { emusToPoints } from "../helpers/ooxmlConverter";
 import { BorderType, FillType, FontStyle, TextAlignment, TextType, TextVerticalAlignment } from "../types";
-import { getThemeColor } from "./theme.parser";
+import { parseBlipFill, parseGradientFill, parseGroupFill, parsePatternFill, parseSolidFill } from "./fill.parser";
 export const parseSlideShapes = (shapeTree, props = {}) => {
     const shapes = shapeTree["p:sp"] || shapeTree["xdr:sp"] || [];
     const pictures = shapeTree["p:pic"] || [];
@@ -43,11 +43,9 @@ const parseSlideShape = (shape, props) => {
                     element.containerStyle.border = border;
                 if (shapeRootFillStyle.type !== FillType.NO_FILL) {
                     element.containerStyle.fill = shapeRootFillStyle;
-                    element.containerStyle.opacity = shapeFillStyle.opacity;
                 }
                 else {
                     element.containerStyle.fill = shapeFillStyle;
-                    element.containerStyle.opacity = shapeFillStyle.opacity;
                 }
             }
         }
@@ -260,99 +258,27 @@ export const parseShapeFill = (shape, props) => {
     if (!shape)
         return { type: FillType.NO_FILL, opacity: 1, };
     if (shape["a:blipFill"] || shape["p:blipFill"]) {
-        const blipFill = queryElement(shape, "blipFill")[0];
-        const blip = blipFill["a:blip"][0];
-        const stretch = blipFill["a:stretch"][0];
-        const stretchFill = stretch["a:fillRect"] || stretch.$?.["a:fillRect"];
-        return {
-            type: FillType.BLIP,
-            value: {
-                id: blip.$["r:embed"],
-                stretch: stretch ? {
-                    type: stretchFill ? "fillRect" : "fill",
-                    fillRect: stretchFill && !Array.isArray(stretchFill) ? {
-                        x: emusToPoints(stretchFill["a:x"]),
-                        y: emusToPoints(stretchFill["a:y"]),
-                        cx: emusToPoints(stretchFill["a:cx"]),
-                        cy: emusToPoints(stretchFill["a:cy"]),
-                    } : null,
-                } : null,
-            },
-            opacity: 1,
-        };
+        const blipFill = queryElement(shape, "blipFill");
+        return parseBlipFill(blipFill?.[0]);
     }
     if (shape["a:gradFill"]) {
-        const gradFill = shape["a:gradFill"][0];
-        let type = "Gradient";
-        if (gradFill["a:lin"]) {
-            type = "GradientLinear";
-        }
-        else if (gradFill["a:path"]) {
-            type = "GradientPath";
-        }
-        else {
-            throw new Error("Unexpected gradient type");
-        }
-        const data = {
-            type: FillType.GRADIENT,
-            value: {
-                points: gradFill["a:gsLst"][0]["a:gs"].map((g) => ({
-                    position: Number(g["$"]["pos"]) / 100000,
-                    color: `#${g["a:srgbClr"][0]["$"]["val"]}`,
-                    opacity: g["a:srgbClr"][0]["a:alpha"] ? Number(g["a:srgbClr"][0]["a:alpha"][0]["$"]["val"]) / 90196 : 1,
-                })),
-            },
-            opacity: 1,
-        };
-        if (type === "GradientLinear") {
-            data.value.angle = gradFill["a:lin"][0]["$"]["ang"] / 60000;
-        }
-        if (type === "GradientPath") {
-            const gradientPath = gradFill["a:path"][0];
-            data.value.path = gradientPath["$"]["path"];
-            const fillToRect = gradientPath["a:fillToRect"][0]["$"];
-            if (fillToRect) {
-                data.value.fillToRect = {
-                    left: fillToRect.l / 1000,
-                    top: fillToRect.t / 1000,
-                    right: fillToRect.r / 1000,
-                    bottom: fillToRect.b / 1000,
-                };
-            }
-        }
-        data.value.gradientType = type;
-        return data;
+        const gradFill = shape["a:gradFill"];
+        return parseGradientFill(gradFill?.[0]);
     }
     if (shape["a:grpFill"]) {
-        const grpFill = shape["a:grpFill"][0];
-        console.error("Cannot to parse a group:", grpFill);
-        return { type: FillType.GROUP, opacity: 1 };
+        const groupFill = shape["a:grpFill"];
+        return parseGroupFill(groupFill?.[0]);
     }
     if (shape["a:noFill"]) {
         return { type: FillType.NO_FILL, opacity: 0, };
     }
     if (shape["a:pattFill"]) {
-        const pattFill = shape["a:pattFill"][0];
-        const patt = pattFill["a:patt"][0];
-        return { type: FillType.PATTERN, opacity: 1, };
+        const patternFill = shape["a:pattFill"];
+        return parsePatternFill(patternFill?.[0]);
     }
     if (shape["a:solidFill"]) {
-        const solidFill = shape["a:solidFill"][0];
-        if (solidFill["a:srgbClr"]) {
-            let opacity = 1;
-            if (solidFill["a:srgbClr"][0]["a:alpha"]) {
-                opacity = solidFill["a:srgbClr"][0]["a:alpha"][0]["$"].val / 100000;
-            }
-            return {
-                type: FillType.SOLID,
-                value: `#${solidFill["a:srgbClr"]["0"]["$"]["val"]}`,
-                opacity,
-            };
-        }
-        if (solidFill["a:schemeClr"]) {
-            return getThemeColor(solidFill["a:schemeClr"][0]["$"].val, props.theme);
-        }
-        ;
+        const solidFill = shape["a:solidFill"];
+        return parseSolidFill(solidFill?.[0]);
     }
     return { type: FillType.NO_FILL, opacity: 1, };
 };

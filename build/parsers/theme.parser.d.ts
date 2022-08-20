@@ -1,5 +1,5 @@
 import { FillType } from "../types";
-export declare const getThemeColor: (color: any, theme: any) => {
+export declare const getThemeColor: (color: any, theme?: any) => {
     type: FillType;
     opacity: number;
     value?: undefined;
@@ -27,6 +27,17 @@ export declare const parseThemeStyles: (theme: any) => {
                 complexScript: any;
             };
         };
+    };
+    formatScheme: {
+        fillStyleList?: undefined;
+        backgroundFillStyleList?: undefined;
+        effectStyleList?: undefined;
+        lineStyleList?: undefined;
+    } | {
+        fillStyleList: any;
+        backgroundFillStyleList: any;
+        effectStyleList: any[];
+        lineStyleList: any[];
     };
     colorSchemeMap: any;
 };

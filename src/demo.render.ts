@@ -50,7 +50,7 @@ const getFillColor = async (
             );
 
             colorLikeObject.value.points.forEach((point: any) => {
-                gradient.addColorStop(point.position, point.color);
+                gradient.addColorStop(point.position, point.fill.value);
             });
 
             return gradient;
@@ -66,7 +66,7 @@ const getFillColor = async (
                 );
 
                 colorLikeObject.value.points.forEach((stop: any) => {
-                    gradient.addColorStop(stop.position, stop.color);
+                    gradient.addColorStop(stop.position, stop.fill.value);
                 });
 
                 return gradient;
@@ -112,7 +112,7 @@ const getFillColor = async (
         return "transparent";
     }
 
-    console.log("Unknown shape fill type:", colorLikeObject);
+    console.warn("Unknown shape fill type:", colorLikeObject);
 
     return "#000";
 };
@@ -146,7 +146,7 @@ class PresentationDrawer {
     ) {
         context.save();
         if (background.type === "SOLID") {
-            context.fillStyle = background.color;
+            context.fillStyle = background.value;
             context.fillRect(0, 0, context.canvas.width, context.canvas.height);
         } else if (background.type === "GRADIENT") {
             const radians = (background.value.angle * Math.PI) / 180;
@@ -183,21 +183,20 @@ class PresentationDrawer {
         context: CanvasRenderingContext2D,
         layer: any
     ) {
-        return Promise.all(
-            layer.map(async (shape: any) => {
-                if (shape.geometry.type === "custom") {
-                    await this.renderCustom(context, shape);
-                } else if (shape.geometry.type === "rect") {
-                    await this.renderRect(context, shape);
-                } else if (shape.geometry.type === "ellipse") {
-                    await this.renderEllipse(context, shape);
-                }
+        for (const shape of layer) {
+            if (shape.geometry.type === "custom") {
+                await this.renderCustom(context, shape);
+            } else if (shape.geometry.type === "rect") {
+                await this.renderRect(context, shape);
+            } else if (shape.geometry.type === "ellipse") {
+                await this.renderEllipse(context, shape);
+            }
 
-                if (!shape.master && shape.text) {
-                    await this.renderText(context, shape);
-                }
-            })
-        );
+            if (!shape.master && shape.text) {
+                await this.renderText(context, shape);
+            }
+
+        }
     }
 
     private async renderCustom(context: CanvasRenderingContext2D, shape: any) {
@@ -208,7 +207,7 @@ class PresentationDrawer {
         context.strokeStyle = shape.containerStyle.border
             ? shape.containerStyle.border.fill.value
             : "transparent";
-        context.globalAlpha = shape.containerStyle.opacity;
+        context.globalAlpha = shape.containerStyle?.fill?.opacity || 1;
         context.lineWidth = shape.containerStyle.border ? shape.containerStyle.border.thickness : 1;
         context.moveTo(
             shape.box.x + shape.geometry.path.moveTo.x / 2,
@@ -271,7 +270,7 @@ class PresentationDrawer {
                     .map((attribute: any) => attribute.toLowerCase().trim())
                     .join(" ");
 
-                context.globalAlpha = paragraph.properties.opacity;
+                context.globalAlpha = paragraph.properties.opacity || 1;
                 context.fillStyle = paragraph.properties.fill.value;
                 context.textAlign = paragraph.properties.alignment?.toLowerCase() || "left";
                 context.font = `${fontAttributes} ${paragraph.properties.fontSize}px ${paragraph.properties.fontFamily}`;
@@ -297,7 +296,7 @@ class PresentationDrawer {
                     element.box.width + paragraph.properties.fontSize,
                 );
 
-                switch (element.text.style.verticalAlign) {
+                switch (element.text.style?.verticalAlign) {
                     case "CENTER":
                         context.textBaseline = "middle";
                         textPositionY += element.box.height / 2;
@@ -331,7 +330,7 @@ class PresentationDrawer {
         context.save();
         const fillColor = await getFillColor(context, element.containerStyle.fill, element);
 
-        context.globalAlpha = element.containerStyle.opacity;
+        context.globalAlpha = element.containerStyle.fill?.opacity || 1;
         context.fillStyle = fillColor;
 
         context.beginPath();

@@ -35,7 +35,14 @@ export const parseSlide = async (slideId, presentation: any): Promise<ISlidePars
     if (slideThemeFile) {
         const slideTheme = await ZipHandler.parseSlideAttributes(slideThemeFile.url);
         const slideThemeStyles = await parseThemeStyles(slideTheme)
-        slide.theme = slideThemeStyles;
+
+        slide.theme = {
+            ...slideThemeStyles,
+            colorSchemeMap: {
+                ...slideThemeStyles.colorSchemeMap,
+                ...slideMaster.colorMap,
+            }
+        };
     }
 
     const slideDocumentLayer = slideDocument.shapes.map(slideShape => {
@@ -96,7 +103,7 @@ export const parseSlide = async (slideId, presentation: any): Promise<ISlidePars
             ...slideLayout.properties,
             ...slideDocument.properties,
         },
-        background: slideDocument.background || slideLayout.background || slideMaster.background,
+        background: resolveBackground(slideDocument.background || slideLayout.background || slideMaster.background, slide.theme),
         layers: [
             slideMasterLayer,
             slideLayoutLayer,
@@ -195,13 +202,10 @@ const applyThemeToShapes = (theme, shapes) => {
                 }
 
                 if (paragraph.properties.fill?.type === FillType.VARIABLE) {
-                    return {
-                        ...paragraph,
-                        properties: {
-                            ...paragraph.properties,
-                            fill: getThemeColor(paragraph.properties.fill.value, theme)
-                        }
-                    }
+                    paragraph.properties = {
+                        ...paragraph.properties,
+                        fill: getThemeColor(paragraph.properties.fill.value, theme)
+                    };
                 }
 
                 return {
@@ -357,6 +361,15 @@ const resolveRelations = (shapes, relations) => {
     );
 }
 
+const resolveBackground = (background, theme) => {
+    if (!background) return null;
+    if (background.type === FillType.VARIABLE) {
+        return getThemeColor(background.value, theme);
+    }
+
+    return background;
+}
+
 const parseSlideBackground = async (slideCommonData, props, relations) => {
     const background = slideCommonData?.["p:bg"]?.[0];
     if (!background) return null;
@@ -376,8 +389,18 @@ const parseSlideBackground = async (slideCommonData, props, relations) => {
         return fill;
     }
 
-    if (background["p:bgRef"]) {
-        console.log("Background reference not supported!");
+    if (background["p:bgRef"]?.[0]) {
+        // http://officeopenxml.com/prSlide-background.php
+        const backgroundReference = background["p:bgRef"]?.[0];
+
+        if (!backgroundReference?.$?.idx || backgroundReference?.$?.idx === "0" || background?.$?.idx === "1000") return null;
+
+        const referenceId = Number(backgroundReference.$.idx);
+
+        return {
+            referenceId,
+            ...getThemeColor(backgroundReference["a:schemeClr"][0]["$"].val, props.theme)
+        }
     }
 
     return null;
