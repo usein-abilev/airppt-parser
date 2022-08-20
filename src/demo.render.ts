@@ -87,7 +87,7 @@ const getFillColor = async (
                 colorLikeObject.value.points.forEach((stop: any) => {
                     gradient.addColorStop(
                         stop.position,
-                        applyAlphaToHex(stop.color, stop.opacity || 1)
+                        applyAlphaToHex(stop.fill.value, stop.fill.opacity || 1)
                     );
                 });
 
@@ -270,11 +270,11 @@ class PresentationDrawer {
                     .map((attribute: any) => attribute.toLowerCase().trim())
                     .join(" ");
 
-                context.globalAlpha = paragraph.properties.opacity || 1;
+                context.globalAlpha = paragraph.properties.fill?.opacity || 1;
                 context.fillStyle = paragraph.properties.fill.value;
                 context.textAlign = paragraph.properties.alignment?.toLowerCase() || "left";
                 context.font = `${fontAttributes} ${paragraph.properties.fontSize}px ${paragraph.properties.fontFamily}`;
-
+                console.log("Draw text:", paragraph.text, context.fillStyle, context.font);
                 let textPositionX = element.box.x;
                 let textPositionY = element.box.y;
 

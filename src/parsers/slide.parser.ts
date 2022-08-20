@@ -107,7 +107,7 @@ export const parseSlide = async (slideId, presentation: any): Promise<ISlidePars
         layers: [
             slideMasterLayer,
             slideLayoutLayer,
-            slideDocumentLayerChanged,
+            slideDocumentLayerChanged.reverse(),
         ].filter(item => item.length),
     };
 }

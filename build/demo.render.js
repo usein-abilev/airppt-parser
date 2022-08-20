@@ -48,7 +48,7 @@ const getFillColor = async (context, colorLikeObject, shape) => {
                 const radius = shape.box.width * 0.05;
                 const gradient = context.createRadialGradient(shape.box.x + shape.box.width / 2, shape.box.y + shape.box.height / 2, radius, shape.box.x + shape.box.width / 2, shape.box.y + shape.box.height / 2, shape.box.width / 2);
                 colorLikeObject.value.points.forEach((stop) => {
-                    gradient.addColorStop(stop.position, applyAlphaToHex(stop.color, stop.opacity || 1));
+                    gradient.addColorStop(stop.position, applyAlphaToHex(stop.fill.value, stop.fill.opacity || 1));
                 });
                 return gradient;
             }
@@ -169,10 +169,11 @@ class PresentationDrawer {
                 .filter((attribute) => attribute.type === "BOLD" || attribute.type === "ITALIC")
                 .map((attribute) => attribute.toLowerCase().trim())
                 .join(" ");
-            context.globalAlpha = paragraph.properties.opacity || 1;
+            context.globalAlpha = paragraph.properties.fill?.opacity || 1;
             context.fillStyle = paragraph.properties.fill.value;
             context.textAlign = paragraph.properties.alignment?.toLowerCase() || "left";
             context.font = `${fontAttributes} ${paragraph.properties.fontSize}px ${paragraph.properties.fontFamily}`;
+            console.log("Draw text:", paragraph.text, context.fillStyle, context.font);
             let textPositionX = element.box.x;
             let textPositionY = element.box.y;
             switch (paragraph.properties.alignment) {
