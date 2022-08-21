@@ -1,9 +1,10 @@
 import { ColorType, FillType } from "../types";
 import { parseGradientFill, parsePatternFill, parseSolidFill } from "./fill.parser";
 export const getThemeColor = (color, theme) => {
+    var _a;
     if (!color)
         return { type: FillType.NO_FILL, opacity: 1, };
-    if (!theme?.colorScheme?.colors) {
+    if (!((_a = theme === null || theme === void 0 ? void 0 : theme.colorScheme) === null || _a === void 0 ? void 0 : _a.colors)) {
         return {
             type: FillType.VARIABLE,
             value: color,
@@ -34,12 +35,13 @@ export const parseThemeStyles = (theme) => {
     };
 };
 const parseThemeColors = (theme) => {
+    var _a, _b, _c, _d;
     const colors = theme["a:theme"]["a:themeElements"][0]["a:clrScheme"][0];
     const colorSchemes = {};
     for (let colorScheme in colors) {
         if (colorScheme.startsWith("a:")) {
             const key = colorScheme.substring(2);
-            if (colors[colorScheme]?.[0]?.["a:srgbClr"]) {
+            if ((_b = (_a = colors[colorScheme]) === null || _a === void 0 ? void 0 : _a[0]) === null || _b === void 0 ? void 0 : _b["a:srgbClr"]) {
                 colorSchemes[key] = {
                     type: ColorType.SRGB,
                     value: `#${colors[colorScheme][0]["a:srgbClr"][0]["$"]["val"]}`,
@@ -48,7 +50,7 @@ const parseThemeColors = (theme) => {
                         : 1
                 };
             }
-            if (colors[colorScheme]?.[0]?.["a:sysClr"]) {
+            if ((_d = (_c = colors[colorScheme]) === null || _c === void 0 ? void 0 : _c[0]) === null || _d === void 0 ? void 0 : _d["a:sysClr"]) {
                 const systemColorElement = colors[colorScheme][0]["a:sysClr"][0];
                 colorSchemes[key] = {
                     type: ColorType.SYSTEM,
@@ -65,7 +67,8 @@ const parseThemeColors = (theme) => {
     };
 };
 const parseThemeColorMap = (theme) => {
-    const element = theme["a:theme"]["a:extraClrSchemeLst"]?.[0]?.["a:extraClrScheme"]?.[0];
+    var _a, _b, _c;
+    const element = (_c = (_b = (_a = theme["a:theme"]["a:extraClrSchemeLst"]) === null || _a === void 0 ? void 0 : _a[0]) === null || _b === void 0 ? void 0 : _b["a:extraClrScheme"]) === null || _c === void 0 ? void 0 : _c[0];
     if (!element)
         return {};
     return element["a:clrMap"][0].$;
@@ -89,11 +92,12 @@ const parseThemeFonts = (theme) => {
     };
 };
 const parseThemeFormats = (theme) => {
-    const element = theme["a:theme"]["a:themeElements"]?.[0]?.["a:fmtScheme"]?.[0];
+    var _a, _b, _c, _d, _e;
+    const element = (_c = (_b = (_a = theme["a:theme"]["a:themeElements"]) === null || _a === void 0 ? void 0 : _a[0]) === null || _b === void 0 ? void 0 : _b["a:fmtScheme"]) === null || _c === void 0 ? void 0 : _c[0];
     if (!element)
         return {};
-    const fillStyleListElement = element["a:fillStyleLst"]?.[0];
-    const backgroundStyleListElement = element["a:bgFillStyleLst"]?.[0];
+    const fillStyleListElement = (_d = element["a:fillStyleLst"]) === null || _d === void 0 ? void 0 : _d[0];
+    const backgroundStyleListElement = (_e = element["a:bgFillStyleLst"]) === null || _e === void 0 ? void 0 : _e[0];
     return {
         fillStyleList: parseFillStyleList(fillStyleListElement),
         backgroundFillStyleList: parseFillStyleList(backgroundStyleListElement),

@@ -19,5 +19,5 @@ export const queryElement = (root, name) => {
     }
 };
 export const hasChild = (root) => {
-    return root?.length && root.some(child => typeof child === "object");
+    return (root === null || root === void 0 ? void 0 : root.length) && root.some(child => typeof child === "object");
 };

@@ -36,7 +36,7 @@ export const parseGradientFill = (gradFill) => {
         type: FillType.GRADIENT,
         value: {
             points: gradFill["a:gsLst"][0]["a:gs"].map((g) => {
-                const position = Number(g.$.pos) / 100_000;
+                const position = Number(g.$.pos) / 100000;
                 const fill = parseSolidFill(g);
                 return {
                     position,
@@ -66,11 +66,12 @@ export const parseGradientFill = (gradFill) => {
     return data;
 };
 export const parseBlipFill = (blipFill) => {
+    var _a;
     if (!blipFill)
         return null;
     const blip = blipFill["a:blip"][0];
     const stretch = blipFill["a:stretch"][0];
-    const stretchFill = stretch["a:fillRect"] || stretch.$?.["a:fillRect"];
+    const stretchFill = stretch["a:fillRect"] || ((_a = stretch.$) === null || _a === void 0 ? void 0 : _a["a:fillRect"]);
     return {
         type: FillType.BLIP,
         value: {

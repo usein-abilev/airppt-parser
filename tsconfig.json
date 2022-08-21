@@ -1,11 +1,11 @@
 {
 	"compilerOptions": {
 		"outDir": "./build",
-		"module": "esnext",
+		"module": "ES6",
 		"moduleResolution": "node",
 		"lib": [
 			"ES6",
-			"ESNext",
+			"ES2016.Array.Include",
 			"dom",
 			"DOM.Iterable"
 		],
@@ -20,7 +20,7 @@
 		"resolveJsonModule": true,
 		"isolatedModules": true,
 		"noEmit": true,
-		"target": "ESNext",
+		"target": "ES6",
 		"baseUrl": "./src",
 		"jsx": "react",
 		"paths": {

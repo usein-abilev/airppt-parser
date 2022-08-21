@@ -1,42 +1,56 @@
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 //handle all zip file actions here
 import JSZip from "jszip";
 import { Buffer } from "buffer";
 import convertXMLToJSON from "./xmlToJSON";
 export default class ZipHandler {
-    static zip = new JSZip();
-    static zipResult;
     static loadZip(zipFilePath) {
-        return new Promise(async (resolve) => {
-            let data = await this.readFileBuffer(zipFilePath);
-            this.zipResult = await this.zip.loadAsync(data);
+        return new Promise((resolve) => __awaiter(this, void 0, void 0, function* () {
+            let data = yield this.readFileBuffer(zipFilePath);
+            this.zipResult = yield this.zip.loadAsync(data);
             resolve(true);
+        }));
+    }
+    static parseSlideAttributes(fileName) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const presentationSlide = yield this.zipResult.file(fileName).async("text");
+            const parsedPresentationSlide = yield convertXMLToJSON(presentationSlide, {
+                trim: true,
+                preserveChildrenOrderForMixedContent: true
+            });
+            return parsedPresentationSlide;
         });
     }
-    static async parseSlideAttributes(fileName) {
-        const presentationSlide = await this.zipResult.file(fileName).async("text");
-        const parsedPresentationSlide = await convertXMLToJSON(presentationSlide, {
-            trim: true,
-            preserveChildrenOrderForMixedContent: true
+    static getFileInZip(fileName, resultType) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let file = yield this.zipResult.file(fileName).async((resultType === null || resultType === void 0 ? void 0 : resultType.toLowerCase()) || "base64");
+            return file;
         });
-        return parsedPresentationSlide;
     }
-    static async getFileInZip(fileName, resultType) {
-        let file = await this.zipResult.file(fileName).async(resultType?.toLowerCase() || "base64");
-        return file;
-    }
-    static async readFileBuffer(filePath) {
-        if (typeof filePath === "string") {
-            if (filePath.startsWith("http")) {
-                const response = await fetch(filePath);
-                const buffer = await response.arrayBuffer();
-                return Buffer.from(buffer);
+    static readFileBuffer(filePath) {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (typeof filePath === "string") {
+                if (filePath.startsWith("http")) {
+                    const response = yield fetch(filePath);
+                    const buffer = yield response.arrayBuffer();
+                    return Buffer.from(buffer);
+                }
+                if (filePath.startsWith("data:application")) {
+                    const base64 = filePath.split(",")[1];
+                    const buffer = Buffer.from(base64, "base64");
+                    return buffer;
+                }
             }
-            if (filePath.startsWith("data:application")) {
-                const base64 = filePath.split(",")[1];
-                const buffer = Buffer.from(base64, "base64");
-                return buffer;
-            }
-        }
-        return Buffer.from(filePath);
+            return Buffer.from(filePath);
+        });
     }
 }
+ZipHandler.zip = new JSZip();
